@@ -43,13 +43,52 @@ VWORLD_KEY     = "962880AD-3D17-3B2C-ABBA-BEED02A87F2C"  # 필수
 KAKAO_REST_KEY = ""            # 선택: 실패 건 카카오 2차 시도 (없으면 빈 문자열)
 
 REQUEST_DELAY = 0.15           # API 호출 간 대기(초)
+
+DATA_NAME  = "data.json"
+CACHE_NAME = "geocode_cache.json"
+
+# (선택) data.json이 있는 폴더를 직접 지정하고 싶으면 아래에 경로를 넣으세요.
+# 비워두면 자동으로 찾습니다. 예) DATA_DIR = "/storage/emulated/0/Download/paju"
+DATA_DIR = ""
 # ================================================
 
-# 스크립트가 어디서 실행되든(예: 스마트폰 Pydroid 3) 스크립트와 같은
-# 폴더의 data.json / geocode_cache.json 을 찾도록 절대경로로 고정한다.
-HERE   = os.path.dirname(os.path.abspath(__file__))
-DATA   = os.path.join(HERE, "data.json")
-CACHE  = os.path.join(HERE, "geocode_cache.json")
+
+def locate_data():
+    """data.json이 있는 폴더를 찾는다.
+    Pydroid 3처럼 스크립트가 앱 내부로 복사돼 실행되는 환경을 고려해,
+    현재 폴더 → 스크립트 폴더 → 안드로이드 저장소(다운로드 등) 순으로 탐색."""
+    # 0) 사용자가 직접 지정한 경우
+    if DATA_DIR and os.path.exists(os.path.join(DATA_DIR, DATA_NAME)):
+        return DATA_DIR
+
+    # 1) 현재 작업 폴더, 2) 스크립트 폴더
+    cands = [os.getcwd()]
+    try:
+        cands.append(os.path.dirname(os.path.abspath(__file__)))
+    except Exception:
+        pass
+    for d in cands:
+        if d and os.path.exists(os.path.join(d, DATA_NAME)):
+            return d
+
+    # 3) 안드로이드/일반 저장소 트리 검색 (다운로드·문서 폴더 우선)
+    roots = [
+        "/storage/emulated/0/Download", "/sdcard/Download",
+        "/storage/emulated/0/Documents", "/sdcard/Documents",
+        os.path.expanduser("~/Download"), os.path.expanduser("~"),
+        "/storage/emulated/0", "/sdcard",
+    ]
+    seen = set()
+    for root in roots:
+        if not root or root in seen or not os.path.isdir(root):
+            continue
+        seen.add(root)
+        for dirpath, dirs, files in os.walk(root):
+            # 캐시·시스템 폴더는 건너뛰어 속도 확보
+            dirs[:] = [d for d in dirs if not d.startswith(".") and d != "Android"]
+            if DATA_NAME in files:
+                return dirpath
+    return None
 
 
 def geocode_vworld(addr):
@@ -133,9 +172,17 @@ def run():
         print("[오류] VWORLD_KEY를 설정하세요.")
         sys.exit(1)
 
-    if not os.path.exists(DATA):
-        print(f"[오류] data.json 을 찾을 수 없습니다. 이 스크립트와 같은 폴더에 data.json이 있어야 합니다.\n       (찾은 위치: {DATA})")
+    print("data.json 위치 찾는 중 …")
+    base = locate_data()
+    if base is None:
+        print("[오류] data.json 을 찾지 못했습니다.")
+        print("  · ZIP을 '다운로드' 폴더에 풀었는지 확인하세요 (data.json이 그 안에 있어야 함).")
+        print("  · Pydroid 3에 '모든 파일 접근' 권한이 켜져 있는지 확인하세요.")
+        print(f"  · 그래도 안 되면 스크립트 위쪽 DATA_DIR 에 폴더 경로를 직접 넣으세요.")
         sys.exit(1)
+    DATA  = os.path.join(base, DATA_NAME)
+    CACHE = os.path.join(base, CACHE_NAME)
+    print(f"  → 사용 폴더: {base}")
 
     with open(DATA, encoding="utf-8") as f:
         payload = json.load(f)
