@@ -85,6 +85,45 @@ def geocode_kakao(addr):
     return None
 
 
+def diagnose(addr):
+    """첫 주소로 V-World를 한 번 호출해 '전부 실패'의 원인을 구분해준다.
+    - 네트워크 자체가 막히면(행정망/방화벽) → 예외 발생
+    - 접속은 되는데 키 문제면 → status != OK + 원문 에러 메시지"""
+    print("-" * 48)
+    print(f"[진단] V-World 연결 확인 중 …  ({addr})")
+    base = "https://api.vworld.kr/req/address"
+    params = {
+        "service": "address", "request": "getcoord", "version": "2.0",
+        "crs": "epsg:4326", "type": "ROAD", "address": addr,
+        "format": "json", "key": VWORLD_KEY,
+    }
+    try:
+        r = requests.get(base, params=params, timeout=10)
+    except Exception as e:
+        print(f"  ✗ 네트워크 오류: {repr(e)[:120]}")
+        print("  → 인터넷 접속 자체가 막혀 있습니다 (행정망/사내 방화벽).")
+        print("    개인 인터넷(집 와이파이·개인 노트북·휴대폰 테더링)에서 실행하세요.")
+        print("-" * 48)
+        return False
+    try:
+        j = r.json()
+    except Exception:
+        print(f"  ✗ 응답이 JSON이 아님 (HTTP {r.status_code}). 프록시 차단 페이지일 수 있습니다.")
+        print("-" * 48)
+        return False
+    st = j.get("response", {}).get("status")
+    if st == "OK":
+        print("  ✓ 연결·인증 정상. 지오코딩을 시작합니다.")
+        print("-" * 48)
+        return True
+    print(f"  ✗ 접속은 됐지만 V-World가 거부: status={st}")
+    print(f"    응답 원문: {json.dumps(j, ensure_ascii=False)[:400]}")
+    print("  → 네트워크가 아니라 '인증키' 문제입니다. V-World 마이페이지에서")
+    print("    이 키에 '주소검색(getcoord)' API가 신청돼 있는지, 등록 도메인을 확인하세요.")
+    print("-" * 48)
+    return False
+
+
 def run():
     if not VWORLD_KEY or "입력" in VWORLD_KEY:
         print("[오류] VWORLD_KEY를 설정하세요.")
@@ -103,6 +142,17 @@ def run():
     if os.path.exists(CACHE):
         with open(CACHE, encoding="utf-8") as f:
             cache = json.load(f)
+
+    # 지오코딩이 필요한 첫 주소로 사전 진단 (전부 실패 원인 구분 + 캐시 오염 방지)
+    need_geo = [x for x in records
+                if x.get("lat") is None
+                and (x.get("정제주소") or x.get("주소"))
+                and (x.get("정제주소") or x.get("주소")) not in cache]
+    if need_geo:
+        probe = need_geo[0].get("정제주소") or need_geo[0].get("주소")
+        if not diagnose(probe):
+            print("사전 진단 실패 → 지오코딩을 중단합니다 (data.json·캐시는 그대로 둡니다).")
+            sys.exit(1)
 
     stat = {"cache": 0, "new": 0, "fail": 0, "kakao": 0, "skip": 0}
     fails = []
