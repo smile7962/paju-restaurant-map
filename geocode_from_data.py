@@ -42,10 +42,14 @@ except ImportError:
 VWORLD_KEY     = "962880AD-3D17-3B2C-ABBA-BEED02A87F2C"  # 필수
 KAKAO_REST_KEY = ""            # 선택: 실패 건 카카오 2차 시도 (없으면 빈 문자열)
 
-DATA   = "data.json"
-CACHE  = "geocode_cache.json"
 REQUEST_DELAY = 0.15           # API 호출 간 대기(초)
 # ================================================
+
+# 스크립트가 어디서 실행되든(예: 스마트폰 Pydroid 3) 스크립트와 같은
+# 폴더의 data.json / geocode_cache.json 을 찾도록 절대경로로 고정한다.
+HERE   = os.path.dirname(os.path.abspath(__file__))
+DATA   = os.path.join(HERE, "data.json")
+CACHE  = os.path.join(HERE, "geocode_cache.json")
 
 
 def geocode_vworld(addr):
@@ -130,7 +134,7 @@ def run():
         sys.exit(1)
 
     if not os.path.exists(DATA):
-        print(f"[오류] {DATA} 를 찾을 수 없습니다. 웹앱과 같은 폴더에서 실행하세요.")
+        print(f"[오류] data.json 을 찾을 수 없습니다. 이 스크립트와 같은 폴더에 data.json이 있어야 합니다.\n       (찾은 위치: {DATA})")
         sys.exit(1)
 
     with open(DATA, encoding="utf-8") as f:
