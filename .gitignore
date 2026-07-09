@@ -1,0 +1,9 @@
+# 원본 엑셀 (매달 교체하는 입력 파일 — 저장소에 올리지 않음)
+*.xlsx
+*.xls
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
