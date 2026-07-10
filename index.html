@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-<title>파주 안심밥상 지도 · 모범음식점·식품안심업소</title>
-<meta name="description" content="파주시가 지정한 모범음식점과 식품안심업소 위치를 지도에서 찾아보세요.">
+<title>파주 안심밥상 지도 · 식품안심업소</title>
+<meta name="description" content="파주시가 지정한 식품안심업소 위치를 지도에서 찾아보세요.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
@@ -13,9 +13,8 @@
 :root{
   --ink:#182430; --ink-soft:#2C3A48; --paper:#F5F6F8; --card:#FFFFFF;
   --line:#E5E7EA; --line-soft:#EEF0F2; --muted:#6B7480; --muted-2:#9AA1AB;
-  --mo:#CF8A1E; --mo-soft:#FBF1DB; --mo-ink:#6E4410;
   --an:#178A5E; --an-soft:#E1F2EA; --an-ink:#0B5539;
-  --both:#BB3A2D; --both-soft:#F8E6E3; --both-ink:#7A241B;
+  --warn:#BB3A2D;
   --focus:#2F6BD6;
   --side-w:344px;
   --shadow:0 1px 2px rgba(24,36,48,.06),0 4px 16px rgba(24,36,48,.06);
@@ -34,14 +33,13 @@ header.top{background:var(--ink);color:#fff;display:flex;align-items:center;
   gap:14px;padding:11px 18px;flex-shrink:0;z-index:30}
 .brand{display:flex;align-items:center;gap:11px;min-width:0}
 .seal{width:34px;height:34px;flex-shrink:0;border-radius:9px;
-  background:linear-gradient(135deg,var(--mo),#E0A63A);display:grid;place-items:center;
-  color:#3d2708;font-weight:800;font-size:16px;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.25)}
+  background:linear-gradient(135deg,var(--an),#2BAE7E);display:grid;place-items:center;
+  color:#fff;font-weight:800;font-size:16px;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.25)}
 .brand h1{font-size:17px;font-weight:700;margin:0;letter-spacing:-.02em;white-space:nowrap}
 .brand .sub{font-size:11.5px;color:#AEB8C4;margin-top:1px;white-space:nowrap;letter-spacing:-.01em}
 .top .meta{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0}
 .pill{font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;white-space:nowrap}
 .pill.date{background:rgba(255,255,255,.1);color:#D5DCE4}
-.pill.mo{background:var(--mo-soft);color:var(--mo-ink)}
 .pill.an{background:var(--an-soft);color:var(--an-ink)}
 
 .body{flex:1;display:flex;min-height:0;position:relative}
@@ -50,12 +48,6 @@ header.top{background:var(--ink);color:#fff;display:flex;align-items:center;
 .side{width:var(--side-w);flex-shrink:0;background:var(--card);border-right:1px solid var(--line);
   display:flex;flex-direction:column;min-height:0}
 .filters{padding:14px 16px 6px;border-bottom:1px solid var(--line-soft);flex-shrink:0}
-.tabs{display:flex;gap:6px;margin-bottom:12px}
-.tab{flex:1;padding:9px 0;border-radius:9px;font-size:13px;font-weight:600;
-  background:var(--paper);color:var(--muted);border:1px solid transparent;transition:.12s}
-.tab.active{background:var(--ink);color:#fff}
-.tab.active[data-tab="모범"]{background:var(--mo);color:#3d2708}
-.tab.active[data-tab="안심"]{background:var(--an);color:#fff}
 .search{position:relative;margin-bottom:12px}
 .search input{width:100%;padding:10px 12px 10px 34px;border:1px solid var(--line);
   border-radius:9px;font-size:13px;background:var(--paper);outline:none;transition:.12s}
@@ -86,23 +78,14 @@ header.top{background:var(--ink);color:#fff;display:flex;align-items:center;
 .card .nm{font-size:14px;font-weight:600;letter-spacing:-.01em;margin-bottom:3px;
   display:flex;align-items:center;gap:6px}
 .card .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tag{font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:5px;flex-shrink:0}
-.tag.mo{background:var(--mo-soft);color:var(--mo-ink)}
-.tag.an{background:var(--an-soft);color:var(--an-ink)}
-.tag.both{background:var(--both-soft);color:var(--both-ink)}
 .card .desc{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card .loc{font-size:11.5px;color:var(--muted-2);margin-top:3px}
-.card .loc .nogeo{color:var(--both)}
+.card .loc .nogeo{color:var(--warn)}
 .empty{text-align:center;color:var(--muted-2);font-size:13px;padding:40px 20px}
 
 /* ===== 지도 ===== */
 .mapwrap{flex:1;position:relative;min-width:0}
 #map{position:absolute;inset:0;background:#E8EBEE}
-.legend{position:absolute;left:12px;bottom:12px;z-index:500;background:rgba(255,255,255,.95);
-  border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12px;
-  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px}
-.legend .row{display:flex;align-items:center;gap:7px;color:var(--ink-soft)}
-.legend .dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
 .notice{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:500;
   background:var(--ink);color:#fff;font-size:12.5px;padding:8px 14px;border-radius:999px;
   box-shadow:var(--shadow);max-width:90%;text-align:center;display:none}
@@ -121,7 +104,6 @@ header.top{background:var(--ink);color:#fff;display:flex;align-items:center;
 .leaflet-popup-content-wrapper{border-radius:12px;box-shadow:0 6px 24px rgba(24,36,48,.18);padding:0}
 .leaflet-popup-content{margin:0;width:248px!important}
 .pop{padding:14px 15px 13px}
-.pop .ph{display:flex;align-items:center;gap:7px;margin-bottom:8px}
 .pop .pnm{font-size:15px;font-weight:700;letter-spacing:-.01em}
 .pop .pmeta{font-size:12.5px;color:var(--muted);margin-bottom:3px}
 .pop .paddr{font-size:12px;color:var(--muted-2);margin:6px 0 11px;line-height:1.45}
@@ -148,7 +130,6 @@ header.top{background:var(--ink);color:#fff;display:flex;align-items:center;
     width:38px;height:4px;border-radius:2px;background:var(--line);}
   .filters{padding-top:20px}
   .mapwrap{flex:1}
-  .legend{bottom:128px}
   .mtoggle{display:flex;position:absolute;top:12px;right:12px;z-index:600;
     background:#fff;border:1px solid var(--line);border-radius:999px;
     padding:8px 14px;font-size:12.5px;font-weight:600;box-shadow:var(--shadow);
@@ -167,12 +148,11 @@ header.top{background:var(--ink);color:#fff;display:flex;align-items:center;
       <div class="seal">파</div>
       <div>
         <h1>파주 안심밥상 지도</h1>
-        <div class="sub">모범음식점 · 식품안심업소</div>
+        <div class="sub">식품안심업소</div>
       </div>
     </div>
     <div class="meta">
       <span class="pill date" id="pillDate">기준일 —</span>
-      <span class="pill mo" id="pillMo">모범 0</span>
       <span class="pill an" id="pillAn">안심 0</span>
     </div>
   </header>
@@ -181,14 +161,9 @@ header.top{background:var(--ink);color:#fff;display:flex;align-items:center;
     <aside class="side" id="side">
       <div class="sheet-handle" id="sheetHandle"></div>
       <div class="filters">
-        <div class="tabs" id="tabs">
-          <button class="tab active" data-tab="전체">전체</button>
-          <button class="tab" data-tab="모범">모범음식점</button>
-          <button class="tab" data-tab="안심">안심업소</button>
-        </div>
         <div class="search">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input id="q" type="search" placeholder="업소명 · 메뉴 검색" autocomplete="off">
+          <input id="q" type="search" placeholder="업소명 · 동네 검색" autocomplete="off">
         </div>
         <div class="grp">
           <div class="lbl">권역</div>
@@ -213,11 +188,6 @@ header.top{background:var(--ink);color:#fff;display:flex;align-items:center;
       </button>
       <div class="notice" id="notice"></div>
       <div id="map"></div>
-      <div class="legend">
-        <div class="row"><span class="dot" style="background:var(--mo)"></span>모범음식점</div>
-        <div class="row"><span class="dot" style="background:var(--an)"></span>식품안심업소</div>
-        <div class="row"><span class="dot" style="background:var(--both)"></span>모범 · 안심 동시</div>
-      </div>
     </div>
   </div>
 </div>
@@ -231,14 +201,10 @@ header.top{background:var(--ink);color:#fff;display:flex;align-items:center;
 const VWORLD_KEY = "962880AD-3D17-3B2C-ABBA-BEED02A87F2C";
 const PAJU_CENTER = [37.79, 126.80];
 
-const COLORS = {
-  '모범':      {main:getVar('--mo'),  mark:'모'},
-  '안심':      {main:getVar('--an'),  mark:'안'},
-  '모범+안심': {main:getVar('--both'),mark:'★'},
-};
+const PIN = {main:getVar('--an'), mark:'안'};
 function getVar(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
 
-let ALL = [], state = {tab:'전체', q:'', region:'전체', type:'전체'};
+let ALL = [], state = {q:'', region:'전체', type:'전체'};
 let map, cluster, markerById = {};
 
 /* ---- 지도 초기화 ---- */
@@ -279,10 +245,9 @@ async function load(){
 }
 
 function applyMeta(m){
-  const dt = m.기준일_안심 || m.기준일_모범 || '';
+  const dt = m.기준일_안심 || '';
   document.getElementById('pillDate').textContent = dt ? `${dt} 기준` : '기준일 —';
-  document.getElementById('pillMo').textContent = '모범 ' + (m.모범 ?? ALL.filter(x=>x.구분.includes('모범')).length);
-  document.getElementById('pillAn').textContent = '안심 ' + (m.안심 ?? ALL.filter(x=>x.구분.includes('안심')).length);
+  document.getElementById('pillAn').textContent = '안심 ' + (m.안심 ?? ALL.length);
 }
 
 /* ---- 필터 칩 생성 ---- */
@@ -311,19 +276,15 @@ function uniq(a){return [...new Set(a)].filter(Boolean);}
 function filtered(){
   const q = state.q.trim().toLowerCase();
   return ALL.filter(x=>{
-    if(state.tab==='모범' && !x.구분.includes('모범')) return false;
-    if(state.tab==='안심' && !x.구분.includes('안심')) return false;
     if(state.region!=='전체' && x.권역!==state.region) return false;
     if(state.type!=='전체' && x.카테고리!==state.type) return false;
     if(q){
-      const hay = (x.업소명+' '+(x.주메뉴||'')+' '+(x.읍면동||'')).toLowerCase();
+      const hay = (x.업소명+' '+(x.읍면동||'')).toLowerCase();
       if(!hay.includes(q)) return false;
     }
     return true;
   });
 }
-function catClass(g){return g==='모범+안심'?'both':g==='모범'?'mo':'an';}
-function catLabel(g){return g==='모범+안심'?'모범·안심':g;}
 
 /* ---- 목록 렌더 ---- */
 function render(){
@@ -335,14 +296,13 @@ function render(){
   rows.forEach(x=>{
     const c = document.createElement('div');
     c.className='card'; c.dataset.id=x.id;
-    const cc = catClass(x.구분);
-    const desc = x.구분.includes('모범') && x.주메뉴 ? `${x.카테고리} · ${x.주메뉴}` : x.카테고리 + (x.유형?` · ${x.유형}`:'');
+    const desc = x.카테고리 + (x.유형?` · ${x.유형}`:'');
     const year = (x.지정일자||'').slice(0,4);
     const geo = (x.lat==null) ? '<span class="nogeo">· 위치 준비중</span>' : '';
     c.innerHTML = `
-      <div class="spine" style="background:var(--${cc==='both'?'both':cc})"></div>
+      <div class="spine" style="background:var(--an)"></div>
       <div class="info">
-        <div class="nm"><span>${esc(x.업소명)}</span><span class="tag ${cc}">${catLabel(x.구분)}</span></div>
+        <div class="nm"><span>${esc(x.업소명)}</span></div>
         <div class="desc">${esc(desc)}</div>
         <div class="loc">${esc(x.읍면동||'')} · ${year}년 지정 ${geo}</div>
       </div>`;
@@ -359,9 +319,8 @@ function buildMarkers(){
   filtered().forEach(x=>{
     if(x.lat==null||x.lng==null) return;
     withGeo++;
-    const cc = COLORS[x.구분] || COLORS['안심'];
     const m = L.marker([x.lat,x.lng],{icon:L.divIcon({
-      className:'', html:`<div class="pin" style="--pc:${cc.main}"><b>${cc.mark}</b></div>`,
+      className:'', html:`<div class="pin" style="--pc:${PIN.main}"><b>${PIN.mark}</b></div>`,
       iconSize:[28,36], iconAnchor:[14,34], popupAnchor:[0,-32]})});
     m.bindPopup(popupHtml(x),{closeButton:true});
     cluster.addLayer(m); markerById[x.id]=m;
@@ -376,13 +335,11 @@ function buildMarkers(){
 }
 
 function popupHtml(x){
-  const cc = catClass(x.구분);
-  const line = x.구분.includes('모범') && x.주메뉴 ? `${x.카테고리} · ${x.주메뉴}` : x.카테고리 + (x.유형?` · ${x.유형}`:'');
+  const line = x.카테고리 + (x.유형?` · ${x.유형}`:'');
   const nv = `https://map.naver.com/p/search/${encodeURIComponent(x.naver_query || (x.업소명+' 파주'))}`;
   const kk = `https://map.kakao.com/?q=${encodeURIComponent(x.업소명+' 파주')}`;
   const tel = (x.전화번호 && x.전화번호!=='nan') ? `<a class="tel" href="tel:${x.전화번호.replace(/[^0-9]/g,'')}">전화</a>` : '';
   return `<div class="pop">
-    <div class="ph"><span class="tag ${cc}">${catLabel(x.구분)}</span></div>
     <div class="pnm">${esc(x.업소명)}</div>
     <div class="pmeta">${esc(line)}</div>
     <div class="paddr">${esc(x.주소||'')}</div>
@@ -410,18 +367,12 @@ function sync(){ markChips(); render(); buildMarkers(); }
 
 /* ---- UI 이벤트 ---- */
 function bindUI(){
-  document.getElementById('tabs').addEventListener('click',e=>{
-    const b=e.target.closest('.tab'); if(!b)return;
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    b.classList.add('active'); state.tab=b.dataset.tab; sync();
-  });
   let t; document.getElementById('q').addEventListener('input',e=>{
     clearTimeout(t); t=setTimeout(()=>{state.q=e.target.value; render(); buildMarkers();},180);
   });
   document.getElementById('reset').addEventListener('click',()=>{
-    state={tab:'전체',q:'',region:'전체',type:'전체'};
+    state={q:'',region:'전체',type:'전체'};
     document.getElementById('q').value='';
-    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab==='전체'));
     sync();
   });
   // 모바일 시트

@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-파주시 모범음식점·안심식당 웹앱 — 월별 데이터 갱신 스크립트
+파주시 식품안심업소 웹앱 — 월별 데이터 갱신 스크립트
 ================================================================
-매달 새 엑셀 2개를 넣고 실행하면:
-  1) 두 파일을 통합 스키마로 정규화 + 주소 정제
+매달 새 안심업소 엑셀을 넣고 실행하면:
+  1) 통합 스키마로 정규화 + 주소 정제
+     (위탁급식소·집단급식소는 일반인 이용 대상이 아니므로 자동 제외)
   2) 좌표 캐시(geocode_cache.json)를 조회해 '신규 주소만' 지오코딩
   3) V-World로 좌표 변환 (실패 시 선택적으로 카카오로 2차 시도)
   4) 좌표가 채워진 data.json 생성 + 캐시 갱신
   5) 리포트 출력 (신규/캐시적중/실패 건수, 실패 목록)
 
 사용법:
-  1) 아래 CONFIG의 VWORLD_KEY에 본인 V-World 인증키 입력
+  1) 아래 CONFIG의 VWORLD_KEY 확인
      (선택) KAKAO_REST_KEY에 카카오 REST 키 입력 → 실패 건 2차 시도
-  2) 새 엑셀 파일명을 EXCEL_모범 / EXCEL_안심에 맞춤
+  2) 새 엑셀 파일명을 EXCEL_안심에 맞춤
   3) python update_data.py 실행
   4) 생성된 data.json을 웹앱과 같은 폴더에 배포(교체)
+
+참고: 모범음식점 지정사업은 2026-07 관련 부서 요청으로 한시적 유예되어
+      이 스크립트와 웹앱에서 제거되었습니다. (과거 처리 로직은 git 이력 참조)
 
 필요 패키지:  pip install pandas openpyxl requests
 """
@@ -28,18 +32,20 @@ except ImportError:
     requests = None  # 지오코딩 없이 정규화만 할 때는 없어도 됨
 
 # ==================== CONFIG ====================
-VWORLD_KEY   = "여기에_V-World_인증키_입력"   # 필수
+VWORLD_KEY   = "962880AD-3D17-3B2C-ABBA-BEED02A87F2C"   # 필수
 KAKAO_REST_KEY = ""                          # 선택: 실패 건 카카오 2차 시도 (없으면 빈 문자열)
 
-EXCEL_모범 = "모범음식점_현황.xlsx"           # 매달 새 파일명으로 교체
-EXCEL_안심 = "식품안심업소_현황.xlsx"
+EXCEL_안심 = "식품안심업소_현황.xlsx"          # 매달 새 파일명으로 교체
 
-기준일_모범 = "2026-05-31"                     # 엑셀 기준일 (헤더 표시용)
-기준일_안심 = "2026-06-30"
+기준일_안심 = "2026-06-30"                     # 엑셀 기준일 (헤더 표시용)
 
 OUT_DATA   = "data.json"
 OUT_CACHE  = "geocode_cache.json"
 REQUEST_DELAY = 0.15   # API 호출 간 대기(초). 대량 처리 시 예의상 간격
+
+# 일반인 이용 대상이 아니어서 제외할 업종/유형 키워드
+EXCLUDE_업종 = ['위탁급식']
+EXCLUDE_유형 = ['집단급식소']
 # ================================================
 
 # 파주시 권역 매핑 (읍면동 → 권역)
@@ -84,9 +90,6 @@ def clean_addr(addr):
             cut = min(cut, i)
     return a[:cut].strip().rstrip('.')
 
-def norm_name(n):
-    return re.sub(r'\s+', '', str(n)).strip()
-
 def fmt_date(d):
     try:
         return pd.to_datetime(d).strftime('%Y-%m-%d')
@@ -95,57 +98,29 @@ def fmt_date(d):
 
 # ---------- 1) 정규화 ----------
 def normalize():
-    df1 = pd.read_excel(EXCEL_모범, header=1)
-    df2 = pd.read_excel(EXCEL_안심)
-    df1.columns = [str(c).strip() for c in df1.columns]
+    df = pd.read_excel(EXCEL_안심)
 
-    records = []
-    for _, r in df1.iterrows():
-        addr = str(r['주소']).strip()
-        emd = extract_emd(addr)
-        비고 = r.get('비고')
-        비고 = None if (pd.isna(비고) or str(비고).strip() == '') else str(비고).strip()
-        records.append({
-            'id': f"M{int(r['연번']):03d}", '업소명': str(r['업소명']).strip(),
-            '구분': '모범', '카테고리': str(r['업태']).strip(), '업태': str(r['업태']).strip(),
-            '업종': None, '유형': None, '주메뉴': str(r['주메뉴']).strip(),
-            '전화번호': str(r['전화번호']).strip(), '주소': addr, '정제주소': clean_addr(addr),
-            '권역': EMD2REGION.get(emd, '북부·기타권'), '읍면동': emd,
-            '지정일자': fmt_date(r['최초 지정일자']), '비고': 비고,
-            'lat': None, 'lng': None, 'naver_query': f"{str(r['업소명']).strip()} 파주",
-        })
-    for _, r in df2.iterrows():
+    records, excluded = [], []
+    for _, r in df.iterrows():
+        업종 = str(r['업종']).strip()
+        유형 = str(r['프랜차이즈/개별/집단급식소']).strip()
+        업소명 = str(r['업소명(상호)']).strip()
+        # 위탁급식소·집단급식소 제외 (일반인 이용 대상 아님)
+        if any(k in 업종 for k in EXCLUDE_업종) or any(k in 유형 for k in EXCLUDE_유형):
+            excluded.append(업소명)
+            continue
         addr = str(r['영업장소재지']).strip()
         emd = extract_emd(addr)
         records.append({
-            'id': f"A{int(r['연번']):03d}", '업소명': str(r['업소명(상호)']).strip(),
-            '구분': '안심', '카테고리': str(r['업종']).strip(), '업태': None,
-            '업종': str(r['업종']).strip(), '유형': str(r['프랜차이즈/개별/집단급식소']).strip(),
+            'id': f"A{int(r['연번']):03d}", '업소명': 업소명,
+            '구분': '안심', '카테고리': 업종, '업태': None,
+            '업종': 업종, '유형': 유형,
             '주메뉴': None, '전화번호': None, '주소': addr, '정제주소': clean_addr(addr),
             '권역': EMD2REGION.get(emd, '북부·기타권'), '읍면동': emd,
             '지정일자': fmt_date(r['지정일자']), '비고': None,
-            'lat': None, 'lng': None, 'naver_query': f"{str(r['업소명(상호)']).strip()} 파주",
+            'lat': None, 'lng': None, 'naver_query': f"{업소명} 파주",
         })
-
-    # 모범∩안심 중복 병합 (업소명 정규화 + 정제주소 일치)
-    mo = [x for x in records if x['구분'] == '모범']
-    an = [x for x in records if x['구분'] == '안심']
-    an_key = {(norm_name(x['업소명']), x['정제주소']): x for x in an}
-    used = set()
-    merged, dup = [], []
-    for m in mo:
-        k = (norm_name(m['업소명']), m['정제주소'])
-        if k in an_key:
-            a = an_key[k]; used.add(id(a)); dup.append(m['업소명'])
-            m2 = dict(m); m2['구분'] = '모범+안심'
-            m2['업종'] = a['업종']; m2['유형'] = a['유형']
-            merged.append(m2)
-        else:
-            merged.append(m)
-    for a in an:
-        if id(a) not in used:
-            merged.append(a)
-    return merged, dup
+    return records, excluded
 
 # ---------- 2) 지오코딩 ----------
 def geocode_vworld(addr):
@@ -192,7 +167,7 @@ def run():
         with open(OUT_CACHE, encoding='utf-8') as f:
             cache = json.load(f)
 
-    records, dup = normalize()
+    records, excluded = normalize()
 
     stat = {'cache': 0, 'new': 0, 'fail': 0, 'kakao': 0}
     fails = []
@@ -225,12 +200,11 @@ def run():
 
     # 저장
     meta = {
-        '기준일_모범': 기준일_모범, '기준일_안심': 기준일_안심,
+        '기준일_안심': 기준일_안심,
         '생성일': datetime.now().strftime('%Y-%m-%d'),
         '총업소수': len(records),
-        '모범': sum(1 for x in records if '모범' in x['구분']),
-        '안심': sum(1 for x in records if '안심' in x['구분']),
-        '모범안심중복': len(dup),
+        '안심': len(records),
+        '제외_급식소': len(excluded),
         '좌표없음': sum(1 for x in records if x['lat'] is None),
     }
     with open(OUT_DATA, 'w', encoding='utf-8') as f:
@@ -240,7 +214,10 @@ def run():
 
     # 리포트
     print("=" * 48)
-    print(f"총 {meta['총업소수']}개소  (모범 {meta['모범']} / 안심 {meta['안심']} / 중복 {meta['모범안심중복']})")
+    print(f"총 {meta['총업소수']}개소  (급식소 제외 {meta['제외_급식소']}건)")
+    if excluded:
+        for n in excluded:
+            print(f"  [제외] {n}")
     print(f"캐시적중 {stat['cache']}  신규지오코딩 {stat['new']}  카카오보정 {stat['kakao']}  실패 {stat['fail']}")
     print(f"좌표없음(지도 미표시) {meta['좌표없음']}개소")
     if fails:
