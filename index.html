@@ -170,7 +170,7 @@ header.top{background:var(--ink);color:#fff;display:flex;align-items:center;
           <div class="chips" id="regionChips"></div>
         </div>
         <div class="grp">
-          <div class="lbl">종류</div>
+          <div class="lbl">음식종류</div>
           <div class="chips" id="typeChips"></div>
         </div>
       </div>
@@ -256,9 +256,11 @@ function buildChips(){
   const rc = document.getElementById('regionChips'); rc.innerHTML='';
   regions.forEach(r=>rc.appendChild(chip(r, r==='전체'?ALL.length:count('권역',r), ()=>{state.region=r; sync();})));
 
-  const types = ['전체', ...uniq(ALL.map(x=>x.카테고리))];
+  const tCount = {};
+  ALL.forEach(x=>{ if(x.음식종류) tCount[x.음식종류] = (tCount[x.음식종류]||0)+1; });
+  const types = ['전체', ...Object.keys(tCount).sort((a,b)=>tCount[b]-tCount[a])];
   const tc = document.getElementById('typeChips'); tc.innerHTML='';
-  types.forEach(t=>tc.appendChild(chip(t, t==='전체'?ALL.length:count('카테고리',t), ()=>{state.type=t; sync();})));
+  types.forEach(t=>tc.appendChild(chip(t, t==='전체'?ALL.length:count('음식종류',t), ()=>{state.type=t; sync();})));
   markChips();
 }
 function chip(label,n,fn){
@@ -277,9 +279,9 @@ function filtered(){
   const q = state.q.trim().toLowerCase();
   return ALL.filter(x=>{
     if(state.region!=='전체' && x.권역!==state.region) return false;
-    if(state.type!=='전체' && x.카테고리!==state.type) return false;
+    if(state.type!=='전체' && x.음식종류!==state.type) return false;
     if(q){
-      const hay = (x.업소명+' '+(x.읍면동||'')).toLowerCase();
+      const hay = (x.업소명+' '+(x.음식종류||'')+' '+(x.읍면동||'')).toLowerCase();
       if(!hay.includes(q)) return false;
     }
     return true;
@@ -296,7 +298,7 @@ function render(){
   rows.forEach(x=>{
     const c = document.createElement('div');
     c.className='card'; c.dataset.id=x.id;
-    const desc = x.카테고리 + (x.유형?` · ${x.유형}`:'');
+    const desc = (x.음식종류||x.카테고리) + (x.유형?` · ${x.유형}`:'');
     const year = (x.지정일자||'').slice(0,4);
     const geo = (x.lat==null) ? '<span class="nogeo">· 위치 준비중</span>' : '';
     c.innerHTML = `
@@ -335,7 +337,7 @@ function buildMarkers(){
 }
 
 function popupHtml(x){
-  const line = x.카테고리 + (x.유형?` · ${x.유형}`:'');
+  const line = (x.음식종류||x.카테고리) + (x.유형?` · ${x.유형}`:'');
   const nv = `https://map.naver.com/p/search/${encodeURIComponent(x.naver_query || (x.업소명+' 파주'))}`;
   const kk = `https://map.kakao.com/?q=${encodeURIComponent(x.업소명+' 파주')}`;
   const tel = (x.전화번호 && x.전화번호!=='nan') ? `<a class="tel" href="tel:${x.전화번호.replace(/[^0-9]/g,'')}">전화</a>` : '';
