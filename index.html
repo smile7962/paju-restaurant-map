@@ -251,17 +251,31 @@ function applyMeta(m){
 }
 
 /* ---- 필터 칩 생성 ---- */
-function buildChips(){
+function buildChips(){ buildRegionChips(); buildTypeChips(); markChips(); }
+
+function buildRegionChips(){
   const regions = ['전체', ...uniq(ALL.map(x=>x.권역))];
   const rc = document.getElementById('regionChips'); rc.innerHTML='';
-  regions.forEach(r=>rc.appendChild(chip(r, r==='전체'?ALL.length:count('권역',r), ()=>{state.region=r; sync();})));
+  regions.forEach(r=>rc.appendChild(chip(r, r==='전체'?ALL.length:count('권역',r), ()=>selectRegion(r))));
+}
 
+/* 권역 선택 → 그 권역의 음식종류만 다시 그림 (종속 필터) */
+function selectRegion(r){
+  state.region = r;
+  const scope = ALL.filter(x=> r==='전체' || x.권역===r);
+  if(state.type!=='전체' && !scope.some(x=>x.음식종류===state.type)) state.type='전체';
+  buildTypeChips();
+  sync();
+}
+
+/* 음식종류 칩: 현재 선택된 권역 범위에서만, 그 권역 기준 개수로 */
+function buildTypeChips(){
+  const scope = ALL.filter(x=> state.region==='전체' || x.권역===state.region);
   const tCount = {};
-  ALL.forEach(x=>{ if(x.음식종류) tCount[x.음식종류] = (tCount[x.음식종류]||0)+1; });
+  scope.forEach(x=>{ if(x.음식종류) tCount[x.음식종류] = (tCount[x.음식종류]||0)+1; });
   const types = ['전체', ...Object.keys(tCount).sort((a,b)=>tCount[b]-tCount[a])];
   const tc = document.getElementById('typeChips'); tc.innerHTML='';
-  types.forEach(t=>tc.appendChild(chip(t, t==='전체'?ALL.length:count('음식종류',t), ()=>{state.type=t; sync();})));
-  markChips();
+  types.forEach(t=>tc.appendChild(chip(t, t==='전체'?scope.length:tCount[t], ()=>{state.type=t; sync();})));
 }
 function chip(label,n,fn){
   const b=document.createElement('button'); b.className='chip'; b.dataset.val=label;
@@ -375,6 +389,7 @@ function bindUI(){
   document.getElementById('reset').addEventListener('click',()=>{
     state={q:'',region:'전체',type:'전체'};
     document.getElementById('q').value='';
+    buildTypeChips();
     sync();
   });
   // 모바일 시트
