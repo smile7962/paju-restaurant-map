@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="파주 안심밥상 지도 — 홈 화면 바로가기 추가 방법(iOS·안드로이드)과 QR코드 안내">
+<meta name="theme-color" content="#178A5E">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍚</text></svg>">
+<title>파주 안심밥상 지도 · 바로가기 안내 카드</title>
+<style>
+  :root{
+    --ink:#12271f; --ink-soft:#3a4b43; --muted:#6a7a71;
+    --brand:#178A5E; --brand-deep:#0B5539; --brand-ink:#0b3b28;
+    --mint:#E4F2EA; --mint-line:#c8e3d5;
+    --paper:#eef2ee; --card:#ffffff; --line:#e3e9e4;
+    --ios:#2F6BD6; --and:#1f9d57;
+    --qr-dark:#16231f;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 34px rgba(16,40,30,.10);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ink:#e9f1ec; --ink-soft:#bcccc3; --muted:#8ea298;
+      --brand:#3fbf8a; --brand-deep:#9be7c6; --brand-ink:#d6f5e6;
+      --mint:#173229; --mint-line:#254a3b;
+      --paper:#0d1a15; --card:#15241d; --line:#26382f;
+      --ios:#6fa2f0; --and:#4fd08a;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 40px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="light"]{
+    --ink:#12271f; --ink-soft:#3a4b43; --muted:#6a7a71;
+    --brand:#178A5E; --brand-deep:#0B5539; --brand-ink:#0b3b28;
+    --mint:#E4F2EA; --mint-line:#c8e3d5; --paper:#eef2ee; --card:#fff; --line:#e3e9e4;
+    --ios:#2F6BD6; --and:#1f9d57; --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 34px rgba(16,40,30,.10);
+  }
+  :root[data-theme="dark"]{
+    --ink:#e9f1ec; --ink-soft:#bcccc3; --muted:#8ea298;
+    --brand:#3fbf8a; --brand-deep:#9be7c6; --brand-ink:#d6f5e6;
+    --mint:#173229; --mint-line:#254a3b; --paper:#0d1a15; --card:#15241d; --line:#26382f;
+    --ios:#6fa2f0; --and:#4fd08a; --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 40px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0}
+  .wrap{
+    min-height:100%;
+    background:
+      radial-gradient(1200px 500px at 50% -10%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 60%),
+      var(--paper);
+    padding:28px 16px 40px;
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,-apple-system,sans-serif;
+    color:var(--ink); line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    display:flex; justify-content:center;
+  }
+  .card{
+    width:100%; max-width:560px; background:var(--card);
+    border:1px solid var(--line); border-radius:22px; overflow:hidden;
+    box-shadow:var(--shadow);
+  }
+
+  /* ---- header ---- */
+  .head{
+    background:linear-gradient(150deg, var(--brand-deep), var(--brand));
+    color:#fff; padding:26px 26px 24px; position:relative;
+  }
+  .head .kicker{font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:rgba(255,255,255,.82); font-weight:700; margin:0 0 12px}
+  .brand{display:flex; align-items:center; gap:13px}
+  .seal{width:52px; height:52px; flex:none; border-radius:14px;
+    background:rgba(255,255,255,.16); display:grid; place-items:center;
+    font-weight:800; font-size:24px; color:#fff;
+    box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.35)}
+  .brand h1{margin:0; font-size:25px; font-weight:800; letter-spacing:-.02em; text-wrap:balance}
+  .brand .tag{margin:3px 0 0; font-size:13.5px; color:rgba(255,255,255,.9)}
+
+  /* ---- QR ---- */
+  .qr-row{display:flex; gap:20px; align-items:center; padding:22px 26px;
+    border-bottom:1px solid var(--line)}
+  .qr{width:132px; height:132px; flex:none; background:#fff; border-radius:14px;
+    padding:9px; box-shadow:0 0 0 1px var(--mint-line); }
+  .qr svg{width:100%; height:100%; display:block; shape-rendering:crispEdges}
+  .qr-txt .lead{font-size:15px; font-weight:800; margin:0 0 5px; color:var(--brand-ink)}
+  .qr-txt p{margin:0; font-size:13px; color:var(--muted)}
+  .qr-url{display:inline-block; margin-top:9px; font-size:12.5px; font-weight:700;
+    color:var(--brand); font-family:ui-monospace,"SF Mono",Menlo,monospace;
+    background:var(--mint); border:1px solid var(--mint-line); border-radius:8px; padding:4px 9px;
+    word-break:break-all}
+
+  /* ---- about ---- */
+  .about{padding:20px 26px 6px}
+  .about p{margin:0 0 14px; font-size:14px; color:var(--ink-soft); max-width:60ch}
+  .stats{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px}
+  .stat{display:flex; align-items:baseline; gap:5px; background:var(--mint);
+    border:1px solid var(--mint-line); border-radius:999px; padding:6px 12px}
+  .stat b{font-size:15px; font-weight:800; color:var(--brand-ink);
+    font-variant-numeric:tabular-nums}
+  .stat span{font-size:12px; color:var(--muted); font-weight:600}
+
+  /* ---- install ---- */
+  .install{padding:16px 26px 24px; display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .plat{border:1px solid var(--line); border-radius:16px; padding:15px 15px 16px; background:var(--card)}
+  .plat > h2{margin:0; font-size:15px; font-weight:800; display:flex; align-items:center; gap:8px}
+  .pmark{width:24px; height:24px; flex:none; border-radius:7px; display:grid; place-items:center; color:#fff}
+  .plat.ios .pmark{background:var(--ios)}
+  .plat.and .pmark{background:var(--and)}
+  .plat .browser{font-size:11.5px; font-weight:700; color:var(--muted); margin:7px 0 12px;
+    letter-spacing:.01em}
+  ol.steps{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:9px}
+  ol.steps li{display:flex; gap:9px; font-size:13px; color:var(--ink-soft); line-height:1.45}
+  ol.steps .num{flex:none; width:20px; height:20px; border-radius:50%; background:var(--mint);
+    color:var(--brand-ink); font-size:11.5px; font-weight:800; display:grid; place-items:center;
+    font-variant-numeric:tabular-nums; margin-top:1px}
+  ol.steps b{color:var(--ink); font-weight:700}
+  .ic{display:inline-flex; vertical-align:-3px; margin:0 1px}
+
+  /* ---- footer ---- */
+  .foot{padding:14px 26px 20px; border-top:1px solid var(--line);
+    font-size:11.5px; color:var(--muted); display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center}
+  .foot .dot{width:4px; height:4px; border-radius:50%; background:var(--muted); opacity:.5}
+
+  @media (max-width:520px){
+    .qr-row{flex-direction:column; text-align:center}
+    .qr-txt{display:flex; flex-direction:column; align-items:center}
+    .install{grid-template-columns:1fr}
+    .brand h1{font-size:22px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+
+    <header class="head">
+      <p class="kicker">파주시 식품안심업소 · 무료 웹서비스</p>
+      <div class="brand">
+        <div class="seal">파</div>
+        <div>
+          <h1>파주 안심밥상 지도</h1>
+          <p class="tag">우리 동네 안심 먹거리, 지도에서 한눈에</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="qr-row">
+      <div class="qr" aria-label="사이트 QR 코드">
+        <svg viewBox="0 0 37 37" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="파주 안심밥상 지도 QR 코드"><path fill="#fff" d="M0 0h37v37h-37z"/><path stroke="#16231f" d="M2 2.5h7m2 0h4m3 0h1m1 0h3m1 0h3m1 0h7m-33 1h1m5 0h1m2 0h1m5 0h1m2 0h1m2 0h2m3 0h1m5 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h2m4 0h3m3 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h2m1 0h1m3 0h1m2 0h1m3 0h1m1 0h1m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h4m2 0h2m1 0h1m2 0h1m1 0h3m1 0h1m-33 1h1m5 0h1m1 0h1m1 0h1m1 0h1m5 0h2m2 0h1m3 0h1m5 0h1m-33 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-25 1h1m2 0h2m1 0h1m1 0h1m1 0h5m-23 1h1m1 0h5m2 0h2m2 0h2m1 0h2m1 0h2m2 0h2m1 0h5m-30 1h1m1 0h2m4 0h1m3 0h1m2 0h2m1 0h5m2 0h2m1 0h4m-32 1h1m1 0h1m1 0h4m1 0h8m2 0h2m2 0h2m2 0h1m1 0h2m-30 1h1m5 0h1m1 0h1m2 0h1m2 0h3m2 0h2m2 0h1m2 0h4m-32 1h1m4 0h2m1 0h1m2 0h2m1 0h1m1 0h1m2 0h2m1 0h4m2 0h2m1 0h2m-33 1h3m4 0h4m4 0h1m2 0h1m3 0h5m3 0h3m-33 1h2m1 0h2m1 0h1m1 0h1m2 0h1m3 0h2m3 0h2m2 0h3m4 0h1m-32 1h2m1 0h1m1 0h1m2 0h2m1 0h1m3 0h1m5 0h2m2 0h3m1 0h2m-30 1h1m1 0h2m1 0h1m2 0h2m2 0h1m1 0h1m1 0h1m6 0h2m1 0h2m3 0h1m-30 1h2m3 0h2m1 0h1m2 0h1m3 0h6m1 0h3m1 0h2m1 0h1m-33 1h1m2 0h1m2 0h2m1 0h4m1 0h3m1 0h1m1 0h2m5 0h2m1 0h1m-29 1h1m1 0h2m1 0h3m2 0h1m1 0h1m1 0h1m2 0h3m2 0h1m1 0h6m-32 1h1m1 0h5m1 0h2m2 0h1m5 0h1m4 0h1m1 0h1m1 0h3m1 0h1m-32 1h2m2 0h2m3 0h3m1 0h4m3 0h2m1 0h1m2 0h1m2 0h2m1 0h1m-33 1h1m1 0h5m1 0h1m1 0h1m6 0h3m2 0h1m1 0h1m2 0h1m1 0h3m-32 1h1m2 0h1m1 0h1m2 0h2m2 0h3m1 0h1m1 0h4m1 0h1m1 0h2m2 0h2m-31 1h1m1 0h2m2 0h1m2 0h1m1 0h1m1 0h1m3 0h3m3 0h7m-22 1h3m1 0h3m1 0h5m1 0h1m1 0h1m3 0h1m1 0h3m-33 1h7m8 0h3m4 0h3m1 0h1m1 0h1m1 0h2m-32 1h1m5 0h1m1 0h1m1 0h2m1 0h1m1 0h1m1 0h8m3 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1m2 0h1m1 0h1m2 0h6m2 0h1m-33 1h1m1 0h3m1 0h1m1 0h3m1 0h4m1 0h2m2 0h1m1 0h3m2 0h1m1 0h3m-33 1h1m1 0h3m1 0h1m1 0h2m5 0h3m5 0h1m2 0h2m1 0h1m-30 1h1m5 0h1m2 0h1m4 0h2m2 0h1m2 0h1m6 0h3m-31 1h7m1 0h2m2 0h1m1 0h2m1 0h1m5 0h3m1 0h1m1 0h1m1 0h1"/></svg>
+      </div>
+      <div class="qr-txt">
+        <p class="lead">휴대폰 카메라로 스캔하세요</p>
+        <p>스캔하면 지도가 바로 열립니다. 설치가 필요 없어요.</p>
+        <span class="qr-url">smile7962.github.io/paju-restaurant-map</span>
+      </div>
+    </section>
+
+    <section class="about">
+      <p>파주시가 지정한 <b>식품안심업소 459곳</b>을 지도에 담았습니다. 권역과 음식종류로
+        원하는 곳만 골라 보고, 네이버·카카오 지도로 바로 길찾기 하세요.
+        홈 화면에 추가하면 앱처럼 한 번에 열 수 있습니다.</p>
+      <div class="stats">
+        <div class="stat"><b>459</b><span>개 업소</span></div>
+        <div class="stat"><b>17</b><span>종 음식</span></div>
+        <div class="stat"><b>5</b><span>개 권역</span></div>
+        <div class="stat"><b>무료</b><span>설치 불필요</span></div>
+      </div>
+    </section>
+
+    <section class="install">
+      <div class="plat ios">
+        <h2><span class="pmark" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.9c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .7 1.1 1.6 2.3 2.8 2.2 1.1 0 1.5-.7 2.9-.7 1.3 0 1.7.7 2.9.7 1.2 0 2-1.1 2.7-2.2.5-.8.8-1.6 1-1.7-.1 0-2-.8-2-3.1zM14.2 5.6c.6-.8 1-1.8.9-2.9-.9 0-2 .6-2.6 1.3-.6.7-1.1 1.7-1 2.7 1 .1 2-.4 2.7-1.1z"/></svg>
+        </span>아이폰 · 아이패드</h2>
+        <div class="browser">Safari 브라우저로 열기</div>
+        <ol class="steps">
+          <li><span class="num">1</span><span>Safari에서 QR을 스캔해 사이트를 엽니다</span></li>
+          <li><span class="num">2</span><span>화면 아래 <b>공유</b>
+            <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ios)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0L8 7m4-4 4 4"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/></svg></span>
+            버튼을 누릅니다</span></li>
+          <li><span class="num">3</span><span>목록에서 <b>홈 화면에 추가</b>를 누릅니다</span></li>
+          <li><span class="num">4</span><span>오른쪽 위 <b>추가</b>를 누르면 끝!</span></li>
+        </ol>
+      </div>
+
+      <div class="plat and">
+        <h2><span class="pmark" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 9v8a1 1 0 0 0 1 1h1v3.2a1.3 1.3 0 0 0 2.6 0V18h2.8v3.2a1.3 1.3 0 0 0 2.6 0V18h1a1 1 0 0 0 1-1V9H6zM4.3 9A1.3 1.3 0 0 0 3 10.3v5.4a1.3 1.3 0 0 0 2.6 0v-5.4A1.3 1.3 0 0 0 4.3 9zm15.4 0a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 2.6 0v-5.4A1.3 1.3 0 0 0 19.7 9zM15.5 4l1-1.7a.3.3 0 0 0-.5-.3l-1 1.8a6.3 6.3 0 0 0-5 0l-1-1.8a.3.3 0 0 0-.5.3l1 1.7A5.6 5.6 0 0 0 6 8h12a5.6 5.6 0 0 0-2.5-4zM9.6 6.4a.6.6 0 1 1 0-1.2.6.6 0 0 1 0 1.2zm4.8 0a.6.6 0 1 1 0-1.2.6.6 0 0 1 0 1.2z"/></svg>
+        </span>갤럭시 · 안드로이드</h2>
+        <div class="browser">Chrome 브라우저로 열기</div>
+        <ol class="steps">
+          <li><span class="num">1</span><span>Chrome에서 QR을 스캔해 사이트를 엽니다</span></li>
+          <li><span class="num">2</span><span>오른쪽 위 <b>더보기</b>
+            <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="var(--and)"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></span>
+            메뉴를 누릅니다</span></li>
+          <li><span class="num">3</span><span><b>홈 화면에 추가</b>(또는 <b>앱 설치</b>)를 누릅니다</span></li>
+          <li><span class="num">4</span><span><b>추가</b>를 누르면 끝!</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span>파주시 식품안심업소</span><span class="dot"></span>
+      <span>2026-06-30 기준</span><span class="dot"></span>
+      <span>홈 화면 아이콘으로 앱처럼 사용</span>
+    </footer>
+
+  </div>
+</div>
+</body>
+</html>
